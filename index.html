@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Campfire: The Wanderer Survival</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="mainS.css">
+    <link rel="stylesheet" href="cabangS.css">
+</head>
+<body>
+	<div id="main-menu">
+		<h1 id="game-title">The Campfire</h1>
+		<button id="start-button">MULAI</button>
+	</div>
+    <div class="container">
+        <h1 class="text-3xl font-bold mb-4">🔥 The Campfire: The Wanderer Survival</h1>
+
+        <div id="canvas-wrapper" class="relative bg-slate-800 p-0 rounded-lg mb-4 w-full">
+            <canvas id="gameCanvas" class="bg-gray-900 border border-gray-600 rounded-md"></canvas>
+
+            <div id="stats-overlay"
+                class="absolute top-0 left-1/2 transform -translate-x-1/2 z-20 bg-sky-900 p-3 rounded-lg mb-4 gap-1 inline-flex whitespace-nowrap overflow-x-auto">
+                <span id="time-display" class="time-status"></span>
+                <div class="stats-grid-compact rounded-lg">
+                    <div class="stat-box-compact">🪵 Kayu: <span id="wood-stat">0</span></div>
+                </div>
+                <div class="stats-grid-compact rounded-lg">
+                    <div class="stat-box-compact">🥩 Makanan: <span id="food-stat">0</span></div>
+                </div>
+                <div class="stats-grid-compact rounded-lg">
+                    <div class="stat-box-compact">👨‍👩‍👧 Penduduk: <span id="population-stat">1</span></div>
+                </div>
+                <span id="log-display" class="text-sm italic">Selamat datang di hutan tak dikenal.</span>
+            </div>
+
+            <div id="left-ui-container">
+                <div id="action-panel-container">
+                    <button id="toggle-worker-button" class="toggle-button" onclick="toggleWorkerPanel()">>></button>
+
+                    <div id="worker-controls-content" class="bg-slate-700/80 backdrop-blur-sm z-10 shadow-lg hidden">
+                        <h2 class="text-base font-semibold mb-2 text-white border-b border-slate-500 pb-1">Alokasi Pekerja</h2>
+                        <div class="flex flex-col gap-2">
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">🪵 Kayu: <span id="gatherer-stat-short">0</span></span>
+                                <div>
+                                    <button onclick="modifyWorker('gatherer', -1)" class="bg-gray-500 hover:bg-gray-600 text-white rounded-l disabled:opacity-50 font-bold">-</button>
+                                    <button onclick="modifyWorker('gatherer', 1)" class="bg-green-600 hover:bg-green-700 text-white rounded-r disabled:opacity-50 font-bold">+</button>
+                                </div>
+                            </div>
+
+                            <div class="flex justify-between items-center">
+                                <span class="text-sm">🥩 Hunter: <span id="hunter-stat-short">0</span> / <span id="max-hunter-stat-short">0</span></span>
+                                <div>
+                                    <button onclick="modifyWorker('hunter', -1)" class="bg-gray-500 hover:bg-gray-600 text-white rounded-l disabled:opacity-50 font-bold">-</button>
+                                    <button onclick="modifyWorker('hunter', 1)" class="bg-yellow-600 hover:bg-yellow-700 text-white rounded-r disabled:opacity-50 font-bold">+</button>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="mt-3 text-xs text-white/80 border-t border-slate-500 pt-2">Pekerja Bebas: <span id="free-workers-stat-short">1</span></p>
+                    </div>
+                </div>
+
+                <div id="build-panel-container">
+                    <button id="toggle-build-button" class="toggle-button" onclick="toggleBuildPanel()">🔨</button>
+                    <div id="build-controls-content" class="bg-slate-700/80 backdrop-blur-sm z-10 shadow-lg hidden">
+                        <h2 class="text-base font-semibold mb-2 text-white border-b border-slate-500 pb-1">Pembangunan</h2>
+                        <div class="flex flex-col gap-2">
+                            <button onclick="buildBuilding('hunterHut')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-1 rounded disabled:opacity-50 text-sm" id="build-hunterhut-btn">
+                                Hunter Hut (20 🪵) (<span id="hunterhut-count">0</span>)
+                            </button>
+                            <button onclick="buildBuilding('storageHut')" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-1 px-1 rounded disabled:opacity-50 text-sm" id="build-storagehut-btn">
+                                Storage Hut (30 🪵) (<span id="storagehut-count">0</span>)
+                            </button>
+                            <button onclick="buildRisetLab()" class="bg-purple-700 hover:bg-purple-800 text-white font-bold py-1 px-1 rounded disabled:opacity-50 text-sm" id="build-risetlab-btn">
+                                Riset Lab (75 🪵) (<span id="risetlab-count">0</span>)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-amber-700 p-3 rounded-lg absolute bottom-4 left-4 z-10 shadow-lg" id="trader-panel" style="display: none;">
+                <p class="text-sm mb-0">Barter sumber daya:</p>
+                <div class="flex gap-2">
+                    <button onclick="trade('wood','food')" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-3 rounded text-sm">Tukar 10 🪵 → 6 🥩</button>
+                    <button onclick="trade('food','wood')" class="bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-3 rounded text-sm">Tukar 10 🥩 → 6 🪵</button>
+                </div>
+            </div>
+
+            <div id="riset-panel" class="bg-purple-800 p-3 rounded-lg absolute bottom-4 right-4 z-10 shadow-lg" style="display: none;">
+                <h3 class="text-lg font-semibold mb-2">🔬 Riset Lab</h3>
+                <p id="risetlab-trader-label" class="text-sm mb-3">Upgrade barter pedagang:</p>
+                <button id="riset-trader-btn" onclick="researchTraderUpgrade()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-3 rounded text-sm w-full mb-2">Riset Pedagang (10 🥩)</button>
+                <p id="risetlab-trader-finished-text" style="display:none; margin-top:8px; color:#fff; font-size:14px;">Tidak ada lagi yang bisa diriset untuk Pedagang.</p>
+                <hr class="border-purple-500 my-3">
+                <p id="risetlab-hunter-label" class="text-sm mb-3">Upgrade kapasitas Hunter Hut:</p>
+                <button id="riset-hunter-btn" onclick="researchHunterUpgrade()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-sm w-full mb-2">Riset Hunter Hut (25 🥩)</button>
+                <p id="risetlab-hunter-finished-text" style="display:none; margin-top:8px; color:#fff; font-size:14px;">Tidak ada lagi yang bisa diriset untuk Hunter Hut.</p>
+                <button onclick="closeRisetPanel()" class="text-xs mt-4 underline w-full">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+	<script src="game-js/hunterHut.js"></script>
+    <script src="game-js/storageHut.js"></script>
+    <script src="game-js/pedagang.js"></script>
+    <script src="game-js/risetLab.js"></script>
+    <script src="game-js/hutan.js"></script>
+    <script src="game-js/canvasResize.js"></script>
+    <script src="pengembara.js"></script>
+    <script src="game-js/serangan.js"></script>
+    <script src="game-js/music.js"></script>
+    <script src="game-js/gameOver.js"></script>
+    <script>
+// --- DEKLARASI STATE GAME ---
+const initialGameState = {
+    population: 1,
+    freeWorkers: 1,
+    maxWorkers: 1,
+    resources: { wood: 100, food: 50 },
+    storage: { woodMax: 100, foodMax: 100, baseCapacity: 100, capacityPerHut: 100 },
+    time: { dayCount: 1, hour: 7, isNight: false },
+    workers: { gatherer: 0, hunter: 0 },
+    buildings: {
+        hunterHut: { count: 0, workers: 0, cost: { wood: 20 }, maxWorkers: 1 },
+        storageHut: { count: 0, workers: 0, cost: { wood: 30 }, maxWorkers: 0 },
+        risetLab: { count: 0, workers: 0, cost: { wood: 75 }, oneTimeOnly: true }
+    },
+    traderUpgrade: 0,
+    hunterUpgrade: 0,
+    events: { isWandererPresent: false, wandererFoodCost: 3, wandererArrivalHour: 0 },
+    bonfire: { woodCostPerCycle: 1, isBurning: true }
+};
+
+let gameState = JSON.parse(JSON.stringify(initialGameState));
+
+// DOM
+const timeDisplay = document.getElementById('time-display');
+const logDisplay = document.getElementById('log-display');
+const container = document.querySelector('.container');
+
+// Panel Pekerja
+const actionPanelContainer = document.getElementById('action-panel-container');
+const workerControlsContent = document.getElementById('worker-controls-content');
+const toggleWorkerButton = document.getElementById('toggle-worker-button');
+
+// Panel Bangunan
+const buildPanelContainer = document.getElementById('build-panel-container');
+const buildControlsContent = document.getElementById('build-controls-content');
+const toggleBuildButton = document.getElementById('toggle-build-button');
+
+let canvas;
+let ctx;
+let animationFrameId;
+let BONFIRE_POS;
+let WORKER_START_Y;
+let timeIntervalId;
+let cityIntervalId;
+
+// Konstanta
+const TILE_SIZE = 50;
+const WORKER_COLORS = { gatherer: '#10b981', hunter: '#3b82f6', freeWorker: '#facc15' };
+
+// Visual workers
+let visualWorkers = [];
+const REST_RADIUS = 30;
+const MIN_DISTANCE_FROM_BONFIRE = 15;
+const TRANSITION_SPEED = 2.0;
+
+function toggleWorkerPanel() {
+    const isOpen = actionPanelContainer.classList.toggle('open');
+    workerControlsContent.classList.toggle('hidden', !isOpen);
+    toggleWorkerButton.textContent = isOpen ? '<<' : '>>';
+    if (isOpen) {
+        toggleWorkerButton.classList.remove('rounded-full');
+        toggleWorkerButton.classList.add('rounded-tr-none', 'rounded-br-none');
+    } else {
+        toggleWorkerButton.classList.remove('rounded-tr-none', 'rounded-br-none');
+        toggleWorkerButton.classList.add('rounded-full');
+    }
+}
+
+function toggleBuildPanel() {
+    const isOpen = buildPanelContainer.classList.toggle('open');
+    buildControlsContent.classList.toggle('hidden', !isOpen);
+    toggleBuildButton.textContent = isOpen ? 'X' : '🔨';
+    if (isOpen) {
+        toggleBuildButton.classList.remove('rounded-full');
+        toggleBuildButton.classList.add('rounded-tr-none', 'rounded-br-none');
+    } else {
+        toggleBuildButton.classList.remove('rounded-tr-none', 'rounded-br-none');
+        toggleBuildButton.classList.add('rounded-full');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    if (!actionPanelContainer.classList.contains('open')) {
+        toggleWorkerButton.classList.add('rounded-full');
+        workerControlsContent.classList.add('hidden');
+    }
+    if (!buildPanelContainer.classList.contains('open')) {
+        toggleBuildButton.classList.add('rounded-full');
+        buildControlsContent.classList.add('hidden');
+    }
+});
+
+function gameLog(message, isError = false) {
+    logDisplay.textContent = message;
+    logDisplay.classList.toggle('log-error', isError);
+}
+
+function interpolateColor(color1, color2, factor) {
+    if (factor < 0) factor = 0;
+    if (factor > 1) factor = 1;
+    const hexToRgb = (hex) => [parseInt(hex.substring(1, 3), 16), parseInt(hex.substring(3, 5), 16), parseInt(hex.substring(5, 7), 16)];
+    const rgb1 = hexToRgb(color1);
+    const rgb2 = hexToRgb(color2);
+    const r = Math.round(rgb1[0] + (rgb2[0] - rgb1[0]) * factor);
+    const g = Math.round(rgb1[1] + (rgb2[1] - rgb1[1]) * factor);
+    const b = Math.round(rgb1[2] + (rgb2[2] - rgb1[2]) * factor);
+    return `rgb(${r}, ${g}, ${b})`;
+}
+
+// WAKTU & SIKLUS
+function updateTime() {
+    gameState.time.hour++;
+    if (gameState.time.hour >= 24) {
+        gameState.time.hour = 0;
+        gameState.time.dayCount++;
+        gameLog(`Hari ${gameState.time.dayCount} telah tiba!`);
+        if (gameState.time.dayCount % 5 === 0) {
+            gameState.population++;
+            gameState.freeWorkers++;
+            gameState.maxWorkers++;
+            gameLog(`Wanderer baru bergabung! Populasi: ${gameState.population}`);
+            syncVisualWorkers();
+        }
+    }
+
+    const wasNight = gameState.time.isNight;
+    const currentHour = gameState.time.hour;
+
+    // Logika Pengembara (Jam 7 sampai jam 17)
+    if (!gameState.time.isNight && !gameState.events.isWandererPresent && gameState.time.dayCount > 1) {
+        if (currentHour >= 7 && currentHour <= 12) {
+            if (Math.random() < 0.10) {
+                gameState.events.isWandererPresent = true;
+                gameState.events.wandererArrivalHour = currentHour;
+                gameLog(`👋 Seorang Pengembara tiba! Klik tombol 'Terima Pengembara' di kanan atas.`);
+            }
+        }
+    }
+    if (gameState.events.isWandererPresent && currentHour === 17) {
+        gameLog(`Pengembara itu pergi karena Anda tidak menawarkan makanan.`, true);
+        gameState.events.isWandererPresent = false;
+    }
+
+    // Transisi ke Malam (Jam 18:00)
+    if (currentHour === 18 && !wasNight) {
+        gameState.time.isNight = true;
+        gameLog('🔔 Matahari terbenam! Saatnya beristirahat.');
+        container.classList.add('night-mode');
+        const REST_CENTER_Y = BONFIRE_POS.y + 40;
+        visualWorkers.forEach(worker => {
+            if (worker.type === 'gatherer' || worker.type === 'hunter' || worker.type === 'freeWorker') {
+                worker.targetX = BONFIRE_POS.x + (Math.random() * 20 - 10);
+                worker.targetY = REST_CENTER_Y + (Math.random() * 20 - 10);
+                worker.isTargetedMoving = true;
+            }
+        });
+    }
+
+    // Transisi ke Siang (Jam 05:00)
+    if (currentHour === 5 && wasNight) {
+        gameState.time.isNight = false;
+        gameLog('Selamat pagi! Saatnya bekerja kembali.');
+        container.classList.remove('night-mode');
+        const WORK_SPOT_X = 50;
+        const WORK_SPOT_Y = BONFIRE_POS.y;
+        const currentGatherers = visualWorkers.filter(w => w.type === 'gatherer');
+        const currentHunters = visualWorkers.filter(w => w.type === 'hunter');
+        visualWorkers.forEach((worker) => {
+            if (worker.type === 'gatherer' || worker.type === 'hunter') {
+                if (!worker.isTargetedMoving) {
+                    const isGatherer = worker.type === 'gatherer';
+                    const offset = isGatherer ? 0 : 30;
+                    const index = isGatherer ? currentGatherers.indexOf(worker) : currentHunters.indexOf(worker);
+                    worker.targetX = WORK_SPOT_X + (Math.random() * 10 - 5);
+                    worker.targetY = WORK_SPOT_Y + offset + (index * 15) + (Math.random() * 10 - 5);
+                    worker.isTargetedMoving = true;
+                }
+            }
+        });
+    }
+
+    updateTraderLogic();
+    updateUI();
+}
+
+// UPDATE CITY
+function updateCity() {
+    const storageHutCount = gameState.buildings.storageHut.count;
+    const bonusStorage = storageHutCount * gameState.storage.capacityPerHut;
+    gameState.storage.woodMax = gameState.storage.baseCapacity + bonusStorage;
+    gameState.storage.foodMax = gameState.storage.baseCapacity + bonusStorage;
+
+    let woodGained = 0;
+    let foodProduced = 0;
+    if (!gameState.time.isNight) {
+        woodGained = gameState.workers.gatherer * 3;
+        foodProduced = gameState.workers.hunter * 5;
+    }
+    gameState.resources.wood += woodGained;
+    gameState.resources.food += foodProduced;
+    gameState.resources.wood = Math.min(gameState.resources.wood, gameState.storage.woodMax);
+    gameState.resources.food = Math.min(gameState.resources.food, gameState.storage.foodMax);
+
+    // Konsumsi makanan
+    gameState.resources.food -= gameState.population * 1;
+
+    // Bonfire consumption
+    const cost = gameState.bonfire.woodCostPerCycle;
+    if (gameState.resources.wood >= cost) {
+        gameState.resources.wood -= cost;
+        gameState.bonfire.isBurning = true;
+    } else {
+        gameState.bonfire.isBurning = false;
+        if (gameState.freeWorkers > 0) {
+            gameState.freeWorkers = Math.max(0, gameState.freeWorkers - 1);
+            gameLog('🔥 API PADAM! Kita kehilangan semangat. 1 Pekerja menjadi tidak efisien.', true);
+        } else {
+            gameLog('🔥 API PADAM! Segera kumpulkan kayu!', true);
+        }
+    }
+
+    // Kelaparan
+    if (gameState.resources.food < 0) {
+        gameState.resources.food = 0;
+        if (Math.random() < 0.05 && gameState.population > 0) {
+            gameState.population = gameState.population - 1;
+            gameState.maxWorkers = gameState.population;
+            gameState.freeWorkers = Math.max(0, gameState.freeWorkers - 1);
+            gameLog('Penduduk meninggal karena kelaparan! Kelola makanan dengan baik.', true);
+        }
+    }
+
+    if (gameState.population <= 0) {
+		gameOver("population");
+	}
+
+    if (typeof window.spawnWanderer === 'function') window.spawnWanderer();
+    updateUI();
+}
+
+function modifyWorker(type, change) {
+    syncVisualWorkers();
+    const WORKER_TYPE = type;
+    if (change > 0) {
+        if (gameState.freeWorkers <= 0) {
+            gameLog('Tidak ada pekerja bebas yang tersisa!', true);
+            return;
+        }
+        if (WORKER_TYPE === 'hunter') {
+            const maxHunters = gameState.buildings.hunterHut.count * gameState.buildings.hunterHut.maxWorkers;
+            if (gameState.workers.hunter >= maxHunters) {
+                gameLog(`Anda perlu membangun Hunter's Hut lagi! Kapasitas: ${maxHunters}.`, true);
+                return;
+            }
+        }
+        let workerToTransition = visualWorkers.find(w => w.type === 'freeWorker');
+        if (change > 0 && !workerToTransition) {
+            workerToTransition = { x: BONFIRE_POS.x, y: BONFIRE_POS.y, targetX: null, targetY: null, isMoving: false, isTargetedMoving: false, type: 'freeWorker' };
+            visualWorkers.push(workerToTransition);
+        }
+        if (workerToTransition) {
+            if (gameState.time.isNight) {
+                workerToTransition.isTargetedMoving = false;
+                workerToTransition.targetX = null;
+                workerToTransition.targetY = null;
+                gameLog(`Pekerja ditetapkan sebagai ${WORKER_TYPE}. Akan mulai bekerja saat fajar tiba.`);
+            } else {
+                workerToTransition.isTargetedMoving = true;
+                const WORK_SPOT_X = 50;
+                const WORK_SPOT_Y = BONFIRE_POS.y;
+                const isGatherer = WORKER_TYPE === 'gatherer';
+                const offset = isGatherer ? 0 : 30;
+                const indexBaru = gameState.workers[WORKER_TYPE];
+                workerToTransition.targetX = WORK_SPOT_X + (Math.random() * 10 - 5);
+                workerToTransition.targetY = WORK_SPOT_Y + offset + (indexBaru * 15) + (Math.random() * 10 - 5);
+            }
+        }
+        gameState.workers[WORKER_TYPE]++;
+        gameState.freeWorkers--;
+    } else if (change < 0) {
+        if (gameState.workers[WORKER_TYPE] <= 0) {
+            gameLog(`Tidak ada ${WORKER_TYPE} yang bisa dibebaskan.`);
+            return;
+        }
+        gameState.workers[WORKER_TYPE]--;
+        gameState.freeWorkers++;
+        const workerToTransition = visualWorkers.find(w => w.type === WORKER_TYPE);
+        if (workerToTransition) {
+            workerToTransition.isTargetedMoving = true;
+            const REST_CENTER_Y = BONFIRE_POS.y + 40;
+            workerToTransition.targetX = BONFIRE_POS.x + (Math.random() * 20 - 10);
+            workerToTransition.targetY = REST_CENTER_Y + (Math.random() * 20 - 10);
+        }
+    }
+    syncVisualWorkers();
+    updateUI();
+}
+
+function buildBuilding(type) {
+    const building = gameState.buildings[type];
+    const cost = building.cost;
+    if (gameState.resources.wood >= cost.wood) {
+        gameState.resources.wood -= cost.wood;
+        building.count++;
+        gameLog(`Berhasil membangun ${type}! Biaya: ${cost.wood} Kayu.`);
+    } else {
+        gameLog(`Tidak cukup sumber daya untuk membangun ${type}! Butuh ${cost.wood} Kayu.`, true);
+    }
+    updateUI();
+}
+
+// UI & Canvas
+function updateUI() {
+    const currentHour = gameState.time.hour.toString().padStart(2, '0');
+    const timeStatus = gameState.time.isNight ? '🔴 Malam' : '☀️ Siang';
+    timeDisplay.textContent = `${timeStatus} | Hari ${gameState.time.dayCount} (${currentHour}:00)`;
+    document.getElementById('wood-stat').textContent = `${gameState.resources.wood} / ${gameState.storage.woodMax}`;
+    document.getElementById('food-stat').textContent = `${gameState.resources.food} / ${gameState.storage.foodMax}`;
+    document.getElementById('population-stat').textContent = gameState.population;
+    document.getElementById('free-workers-stat-short').textContent = gameState.freeWorkers;
+    document.getElementById('gatherer-stat-short').textContent = gameState.workers.gatherer;
+    document.getElementById('hunter-stat-short').textContent = gameState.workers.hunter;
+    const maxHunters = gameState.buildings.hunterHut.count * gameState.buildings.hunterHut.maxWorkers;
+    document.getElementById('max-hunter-stat-short').textContent = maxHunters;
+    const hunterHutCost = gameState.buildings.hunterHut.cost.wood;
+    document.getElementById('build-hunterhut-btn').disabled = gameState.resources.wood < hunterHutCost;
+    document.getElementById('hunterhut-count').textContent = gameState.buildings.hunterHut.count;
+    const storageHutCost = gameState.buildings.storageHut.cost.wood;
+    document.getElementById('build-storagehut-btn').disabled = gameState.resources.wood < storageHutCost;
+    document.getElementById('storagehut-count').textContent = gameState.buildings.storageHut.count;
+    const wandererPanel = document.getElementById('wanderer-panel');
+    if (wandererPanel) {
+        if (gameState.events.isWandererPresent) wandererPanel.style.display = 'block'; else wandererPanel.style.display = 'none';
+    }
+    document.getElementById('risetlab-count').textContent = gameState.buildings.risetLab.count;
+    if (typeof updateTraderButtonsText === 'function') updateTraderButtonsText();
+}
+
+function drawBonfire(time) {
+    if (!BONFIRE_POS) return;
+    if (!gameState.bonfire.isBurning) {
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(BONFIRE_POS.x, BONFIRE_POS.y, 8, 0, Math.PI * 2);
+        ctx.fill();
+        return;
+    }
+    const colorIntensity = Math.sin(time / 150) * 0.1 + 0.9;
+    const red = Math.floor(255 * colorIntensity);
+    const orange = Math.floor(165 * colorIntensity);
+    ctx.fillStyle = time % 400 < 200 ? `rgb(${red}, 68, 68)` : `rgb(${red}, ${orange}, 68)`;
+    ctx.beginPath();
+    ctx.arc(BONFIRE_POS.x, BONFIRE_POS.y, 10, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255, 100, 0, 0.1)';
+    ctx.beginPath();
+    ctx.arc(BONFIRE_POS.x, BONFIRE_POS.y, 20 + Math.sin(time / 200) * 5, 0, Math.PI * 2);
+    ctx.fill();
+}
+
+function drawBuildings() {
+    if (!BONFIRE_POS) return;
+    if (typeof window.drawHunterHuts === 'function') window.drawHunterHuts(ctx, BONFIRE_POS, gameState);
+    if (typeof window.drawStorageHuts === 'function') window.drawStorageHuts(ctx, BONFIRE_POS, TILE_SIZE, gameState);
+    if (typeof window.drawRisetLab === 'function') window.drawRisetLab(ctx, BONFIRE_POS, TILE_SIZE, gameState);
+}
+
+function handleCanvasClick(evt) {
+    if (gameState.buildings.risetLab.count < 1) return;
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = evt.clientX - rect.left;
+    const mouseY = evt.clientY - rect.top;
+    const TILE = TILE_SIZE * 1.3;
+    const x = BONFIRE_POS.x - 80 - (TILE_SIZE * 1.2);
+    const y = BONFIRE_POS.y + 40;
+    if (mouseX >= x && mouseX <= x + TILE && mouseY >= y && mouseY <= y + 48) window.openRisetPanel();
+}
+
+function syncVisualWorkers() {
+    const requiredCount = gameState.population;
+    if (visualWorkers.length !== requiredCount) {
+        while (visualWorkers.length < requiredCount) {
+            const randomAngle = Math.random() * Math.PI * 2;
+            const randomRadius = Math.random() * REST_RADIUS;
+            visualWorkers.push({ x: BONFIRE_POS.x + Math.cos(randomAngle) * randomRadius, y: WORKER_START_Y + Math.sin(randomAngle) * randomRadius, targetX: null, targetY: null, isMoving: true, isTargetedMoving: false, type: 'freeWorker' });
+        }
+        while (visualWorkers.length > requiredCount) visualWorkers.pop();
+    }
+    let currentIndex = 0;
+    const workerCounts = { gatherer: gameState.workers.gatherer, hunter: gameState.workers.hunter, freeWorker: gameState.freeWorkers };
+    ['gatherer', 'hunter', 'freeWorker'].forEach(type => {
+        for (let i = 0; i < (workerCounts[type] || 0); i++) {
+            if (visualWorkers[currentIndex]) visualWorkers[currentIndex].type = type;
+            currentIndex++;
+        }
+    });
+}
+
+function moveWorkerStochastic(worker, center, radius, minDistance) {
+    const SPEED = 0.5;
+    const STOP_CHANCE = 0.003;
+    if (Math.random() < STOP_CHANCE) {
+        worker.isMoving = !worker.isMoving;
+        if (!worker.isMoving) { worker.targetX = null; worker.targetY = null; return; }
+    }
+    if (!worker.isMoving) return;
+    const distToTarget = worker.targetX !== null ? Math.sqrt(Math.pow(worker.x - worker.targetX, 2) + Math.pow(worker.y - worker.targetY, 2)) : 0;
+    if (worker.targetX === null || distToTarget < 2) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = Math.random() * radius;
+        worker.targetX = center.x + Math.cos(angle) * dist;
+        worker.targetY = center.y + Math.sin(angle) * dist;
+    }
+    const dx = worker.targetX - worker.x;
+    const dy = worker.targetY - worker.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > 0) { worker.x += (dx / dist) * SPEED; worker.y += (dy / dist) * SPEED; }
+    const currentDistFromBonfire = Math.sqrt(Math.pow(worker.x - BONFIRE_POS.x, 2) + Math.pow(worker.y - BONFIRE_POS.y, 2));
+    if (currentDistFromBonfire < minDistance) {
+        const angle = Math.atan2(worker.y - BONFIRE_POS.y, worker.x - BONFIRE_POS.x);
+        worker.x = BONFIRE_POS.x + Math.cos(angle) * minDistance;
+        worker.y = BONFIRE_POS.y + Math.sin(angle) * minDistance;
+        worker.targetX = null;
+    }
+}
+
+function moveWorkerToTarget(worker, speed) {
+    if (worker.targetX === null || worker.targetY === null) { worker.isTargetedMoving = false; return; }
+    const dx = worker.targetX - worker.x;
+    const dy = worker.targetY - worker.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist > speed) { worker.x += (dx / dist) * speed; worker.y += (dy / dist) * speed; } else { worker.x = worker.targetX; worker.y = worker.targetY; worker.isTargetedMoving = false; worker.targetX = null; worker.targetY = null; }
+}
+
+function drawWorkers(time) {
+    if (!BONFIRE_POS) return;
+    syncVisualWorkers();
+    function drawDot(x, y, color) { ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, 5, 0, Math.PI * 2); ctx.fill(); }
+    const REST_CENTER = { x: BONFIRE_POS.x, y: WORKER_START_Y };
+    const WORK_SPOT = { x: 50, y: BONFIRE_POS.y };
+    const currentGatherers = visualWorkers.filter(w => w.type === 'gatherer');
+    const currentHunters = visualWorkers.filter(w => w.type === 'hunter');
+    visualWorkers.forEach((worker) => {
+        let x = worker.x; let y = worker.y; let color = WORKER_COLORS[worker.type] || '#fff';
+        const isProductionWorker = worker.type === 'gatherer' || worker.type === 'hunter';
+        if (worker.isTargetedMoving) { moveWorkerToTarget(worker, TRANSITION_SPEED); x = worker.x; y = worker.y; }
+        else if (isProductionWorker && gameState.time.isNight || worker.type === 'freeWorker') { moveWorkerStochastic(worker, REST_CENTER, REST_RADIUS, MIN_DISTANCE_FROM_BONFIRE); x = worker.x; y = worker.y; }
+        else if (isProductionWorker && !gameState.time.isNight) {
+            const offset = worker.type === 'gatherer' ? 0 : 30;
+            const xOffset = Math.sin(time / (200 + visualWorkers.indexOf(worker) * 50)) * 20;
+            const yOffset = Math.cos(time / (150 + visualWorkers.indexOf(worker) * 40)) * 10;
+            const index = worker.type === 'gatherer' ? currentGatherers.indexOf(worker) : currentHunters.indexOf(worker);
+            x = WORK_SPOT.x + xOffset;
+            y = WORK_SPOT.y + offset + (index * 15) + yOffset;
+            worker.x = x; worker.y = y;
+        }
+        drawDot(x, y, color);
+    });
+    if (typeof window.drawWanderer === 'function') window.drawWanderer(time);
+}
+
+const DAY_COLOR = '#65a30d';
+const NIGHT_COLOR = '#0f172a';
+
+function drawVillage(time) {
+    let currentColor = DAY_COLOR;
+    const hour = gameState.time.hour;
+    let transitionFactor = 0;
+    const SUNRISE_START = 4; const SUNRISE_END = 6; const SUNSET_START = 16; const SUNSET_END = 18; const TRANSITION_DURATION = 2;
+    if (hour >= SUNSET_START && hour < SUNSET_END) { transitionFactor = (hour - SUNSET_START) / TRANSITION_DURATION; currentColor = interpolateColor(DAY_COLOR, NIGHT_COLOR, transitionFactor); }
+    else if (hour >= SUNSET_END || hour < SUNRISE_START) currentColor = NIGHT_COLOR;
+    else if (hour >= SUNRISE_START && hour < SUNRISE_END) { transitionFactor = (hour - SUNRISE_START) / TRANSITION_DURATION; currentColor = interpolateColor(NIGHT_COLOR, DAY_COLOR, transitionFactor); }
+    else currentColor = DAY_COLOR;
+    ctx.fillStyle = currentColor; ctx.fillRect(0, 0, canvas.width, canvas.height);
+    drawBonfire(time); drawWorkers(time); drawBuildings();
+    if (typeof window.drawForestOverlay === 'function') window.drawForestOverlay(ctx, canvas);
+    animationFrameId = requestAnimationFrame((time) => drawVillage(time));
+}
+
+function init() {
+    canvas = document.getElementById('gameCanvas');
+    if (canvas) {
+        ctx = canvas.getContext('2d');
+        canvas.addEventListener('click', handleCanvasClick);
+        BONFIRE_POS = { x: canvas.width / 2, y: canvas.height / 2 + 50 };
+        WORKER_START_Y = BONFIRE_POS.y + 40;
+        animationFrameId = requestAnimationFrame((t) => drawVillage(t));
+    }
+    timeIntervalId = setInterval(updateTime, 5000); cityIntervalId = setInterval(updateCity, 5000);
+    initializeTraderSystem(); if (typeof window.initWandererSystem === 'function') window.initWandererSystem(); if (typeof window.updateTraderLogic === 'function') window.updateTraderLogic(); updateUI(); syncVisualWorkers();
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const startButton = document.getElementById('start-button');
+    const mainMenu = document.getElementById('main-menu');
+    const gameContainer = document.getElementById('game-container');
+
+    if (startButton) {
+        startButton.addEventListener('click', () => {
+            if (mainMenu) mainMenu.classList.add('hidden');
+            if (gameContainer) gameContainer.classList.remove('hidden');
+            
+            init(); 
+        });
+    } else {
+        console.error("Tombol 'start-button' tidak ditemukan saat DOMContentLoaded!");
+    }
+});
+	</script>
+</body>
+</html>
