@@ -1,7 +1,7 @@
 #main-menu {
     position: fixed;
     inset: 0;
-    background: url('gambarUtama.png') center/cover no-repeat;
+    background: url('gambarUtama.PNG') center/cover no-repeat;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -103,4 +103,5 @@
     #start-button {
         padding: 1.2rem 3rem;
     }
+
 }
