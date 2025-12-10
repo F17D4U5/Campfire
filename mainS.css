@@ -109,30 +109,9 @@ body {
 }
 .time-status { font-weight: bold; font-size: 1.25rem; }
 .log-error { color: #f87171; font-weight: bold; }
-.mobile-ui * {
+body.mobile-layout * { 
     transform-origin: top left;
-    transform: scale(var(--ui-scale));
-}
-@media (max-width: 768px) {
-    .toggle-button {
-        font-size: 0.7rem;
-        padding: 2px 5px;
-    }
-    #worker-controls-content,
-    #build-controls-content {
-        padding: 4px;
-        width: 150px;
-    }
-    #stats-overlay {
-        font-size: 0.7rem;
-        padding: 2px 4px;
-    }
-    #wanderer-panel,
-    #trader-panel,
-    #riset-panel {
-        transform: scale(0.85);
-        transform-origin: bottom right;
-    }
+    transform: scale(var(--ui-scale, 1)); /* Gunakan 1 sebagai default jika var() gagal */
 }
 body.mobile-layout {
     font-size: 0.85rem;
@@ -159,4 +138,19 @@ body.mobile-layout .toggle-button {
 body.mobile-layout #stats-overlay {
     font-size: 0.7rem;
     padding: 4px;
+}
+/* Volume Control */
+#volume-control {
+    animation: fadeIn 1s ease-out;
+}
+#volume-control:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px -5px rgba(251, 146, 60, 0.4);
+}
+#volume-toggle {
+    min-width: 48px;
+}
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
 }

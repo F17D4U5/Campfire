@@ -29,7 +29,7 @@
                     <div class="stat-box-compact">🥩 Makanan: <span id="food-stat">0</span></div>
                 </div>
                 <div class="stats-grid-compact rounded-lg">
-                    <div class="stat-box-compact">👨‍👩‍👧 Penduduk: <span id="population-stat">1</span></div>
+                    <div class="stat-box-compact">👨‍👩‍👦 Penduduk: <span id="population-stat">1</span></div>
                 </div>
                 <span id="log-display" class="text-sm italic">Selamat datang di hutan tak dikenal.</span>
             </div>
@@ -88,17 +88,13 @@
                 </div>
             </div>
 
-            <div id="riset-panel" class="bg-purple-800 p-3 rounded-lg absolute bottom-4 right-4 z-10 shadow-lg" style="display: none;">
-                <h3 class="text-lg font-semibold mb-2">🔬 Riset Lab</h3>
-                <p id="risetlab-trader-label" class="text-sm mb-3">Upgrade barter pedagang:</p>
-                <button id="riset-trader-btn" onclick="researchTraderUpgrade()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-3 rounded text-sm w-full mb-2">Riset Pedagang (10 🥩)</button>
-                <p id="risetlab-trader-finished-text" style="display:none; margin-top:8px; color:#fff; font-size:14px;">Tidak ada lagi yang bisa diriset untuk Pedagang.</p>
-                <hr class="border-purple-500 my-3">
-                <p id="risetlab-hunter-label" class="text-sm mb-3">Upgrade kapasitas Hunter Hut:</p>
-                <button id="riset-hunter-btn" onclick="researchHunterUpgrade()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-3 rounded text-sm w-full mb-2">Riset Hunter Hut (25 🥩)</button>
-                <p id="risetlab-hunter-finished-text" style="display:none; margin-top:8px; color:#fff; font-size:14px;">Tidak ada lagi yang bisa diriset untuk Hunter Hut.</p>
-                <button onclick="closeRisetPanel()" class="text-xs mt-4 underline w-full">Tutup</button>
-            </div>
+			<div id="riset-panel" class="bg-purple-800 p-3 rounded-lg absolute bottom-4 right-4 z-10 shadow-lg" style="display: none;">
+				<h3 class="text-lg font-semibold mb-2">🔬 Riset Lab</h3>
+				<p id="risetlab-trader-label" class="text-sm mb-3">Upgrade barter pedagang:</p>
+				<button id="riset-trader-btn" onclick="researchTraderUpgrade()" class="bg-pink-500 hover:bg-pink-600 text-white font-bold py-2 px-3 rounded text-sm w-full mb-2">Riset Pedagang (10 🥩)</button>
+				<p id="risetlab-trader-finished-text" style="display:none; margin-top:8px; color:#fff; font-size:14px;">Tidak ada yang bisa diriset.</p>
+				<button onclick="closeRisetPanel()" class="text-xs mt-4 underline w-full">Tutup</button>
+			</div>
         </div>
     </div>
 
@@ -108,7 +104,7 @@
     <script src="risetLab.js"></script>
     <script src="hutan.js"></script>
     <script src="canvasResize.js"></script>
-    <script src="pengembara.js"></script>
+	<script src="pengembara.js"></script>
     <script src="serangan.js"></script>
     <script src="music.js"></script>
     <script src="gameOver.js"></script>
@@ -128,7 +124,6 @@ const initialGameState = {
         risetLab: { count: 0, workers: 0, cost: { wood: 75 }, oneTimeOnly: true }
     },
     traderUpgrade: 0,
-    hunterUpgrade: 0,
     events: { isWandererPresent: false, wandererFoodCost: 3, wandererArrivalHour: 0 },
     bonfire: { woodCostPerCycle: 1, isBurning: true }
 };
@@ -233,28 +228,12 @@ function updateTime() {
             gameState.population++;
             gameState.freeWorkers++;
             gameState.maxWorkers++;
-            gameLog(`Wanderer baru bergabung! Populasi: ${gameState.population}`);
             syncVisualWorkers();
         }
     }
 
     const wasNight = gameState.time.isNight;
     const currentHour = gameState.time.hour;
-
-    // Logika Pengembara (Jam 7 sampai jam 17)
-    if (!gameState.time.isNight && !gameState.events.isWandererPresent && gameState.time.dayCount > 1) {
-        if (currentHour >= 7 && currentHour <= 12) {
-            if (Math.random() < 0.10) {
-                gameState.events.isWandererPresent = true;
-                gameState.events.wandererArrivalHour = currentHour;
-                gameLog(`👋 Seorang Pengembara tiba! Klik tombol 'Terima Pengembara' di kanan atas.`);
-            }
-        }
-    }
-    if (gameState.events.isWandererPresent && currentHour === 17) {
-        gameLog(`Pengembara itu pergi karena Anda tidak menawarkan makanan.`, true);
-        gameState.events.isWandererPresent = false;
-    }
 
     // Transisi ke Malam (Jam 18:00)
     if (currentHour === 18 && !wasNight) {
@@ -293,6 +272,7 @@ function updateTime() {
             }
         });
     }
+    if (typeof spawnWanderer === 'function') spawnWanderer();
 
     updateTraderLogic();
     updateUI();
@@ -349,7 +329,6 @@ function updateCity() {
 		gameOver("population");
 	}
 
-    if (typeof window.spawnWanderer === 'function') window.spawnWanderer();
     updateUI();
 }
 
@@ -443,10 +422,6 @@ function updateUI() {
     const storageHutCost = gameState.buildings.storageHut.cost.wood;
     document.getElementById('build-storagehut-btn').disabled = gameState.resources.wood < storageHutCost;
     document.getElementById('storagehut-count').textContent = gameState.buildings.storageHut.count;
-    const wandererPanel = document.getElementById('wanderer-panel');
-    if (wandererPanel) {
-        if (gameState.events.isWandererPresent) wandererPanel.style.display = 'block'; else wandererPanel.style.display = 'none';
-    }
     document.getElementById('risetlab-count').textContent = gameState.buildings.risetLab.count;
     if (typeof updateTraderButtonsText === 'function') updateTraderButtonsText();
 }
@@ -598,13 +573,23 @@ function init() {
         ctx = canvas.getContext('2d');
         canvas.addEventListener('click', handleCanvasClick);
         BONFIRE_POS = { x: canvas.width / 2, y: canvas.height / 2 + 50 };
+		wanderer.y = BONFIRE_POS.y;
+		wanderer.targetX = BONFIRE_POS.x - 80;
         WORKER_START_Y = BONFIRE_POS.y + 40;
         animationFrameId = requestAnimationFrame((t) => drawVillage(t));
     }
-    timeIntervalId = setInterval(updateTime, 5000); cityIntervalId = setInterval(updateCity, 5000);
-    initializeTraderSystem(); if (typeof window.initWandererSystem === 'function') window.initWandererSystem(); if (typeof window.updateTraderLogic === 'function') window.updateTraderLogic(); updateUI(); syncVisualWorkers();
+    
+    timeIntervalId = setInterval(updateTime, 5000); 
+    cityIntervalId = setInterval(updateCity, 5000);
+    
+    initializeTraderSystem(); 
+    if (typeof window.updateTraderLogic === 'function') window.updateTraderLogic();
+    
+    if (typeof window.initializeAttackSystem === 'function') window.initializeAttackSystem();
+    
+    updateUI(); 
+    syncVisualWorkers();
 }
-
 document.addEventListener('DOMContentLoaded', () => {
     const startButton = document.getElementById('start-button');
     const mainMenu = document.getElementById('main-menu');
@@ -624,4 +609,3 @@ document.addEventListener('DOMContentLoaded', () => {
 	</script>
 </body>
 </html>
-
