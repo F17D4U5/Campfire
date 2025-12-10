@@ -236,7 +236,7 @@ function updateTime() {
     const currentHour = gameState.time.hour;
 
     // Transisi ke Malam (Jam 18:00)
-    if (currentHour === 18 && !wasNight) {
+    if (currentHour === 19 && !wasNight) {
         gameState.time.isNight = true;
         gameLog('🔔 Matahari terbenam! Saatnya beristirahat.');
         container.classList.add('night-mode');
@@ -556,7 +556,7 @@ function drawVillage(time) {
     let currentColor = DAY_COLOR;
     const hour = gameState.time.hour;
     let transitionFactor = 0;
-    const SUNRISE_START = 4; const SUNRISE_END = 6; const SUNSET_START = 16; const SUNSET_END = 18; const TRANSITION_DURATION = 2;
+    const SUNRISE_START = 4; const SUNRISE_END = 6; const SUNSET_START = 17; const SUNSET_END = 19; const TRANSITION_DURATION = 2;
     if (hour >= SUNSET_START && hour < SUNSET_END) { transitionFactor = (hour - SUNSET_START) / TRANSITION_DURATION; currentColor = interpolateColor(DAY_COLOR, NIGHT_COLOR, transitionFactor); }
     else if (hour >= SUNSET_END || hour < SUNRISE_START) currentColor = NIGHT_COLOR;
     else if (hour >= SUNRISE_START && hour < SUNRISE_END) { transitionFactor = (hour - SUNRISE_START) / TRANSITION_DURATION; currentColor = interpolateColor(NIGHT_COLOR, DAY_COLOR, transitionFactor); }
@@ -609,3 +609,4 @@ document.addEventListener('DOMContentLoaded', () => {
 	</script>
 </body>
 </html>
+
